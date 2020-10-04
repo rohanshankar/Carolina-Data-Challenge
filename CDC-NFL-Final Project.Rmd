@@ -3,6 +3,7 @@ title: "R Notebook"
 output:
   html_document:
     df_print: paged
+Authors: Rohan Shankar, Ashna Patel, TJ Nanugonda, Manas Panchavati
 ---
 
 ```{r}
