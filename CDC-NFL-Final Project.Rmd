@@ -1,0 +1,102 @@
+---
+title: "R Notebook"
+output:
+  html_document:
+    df_print: paged
+---
+
+```{r}
+library(readr)
+library(dplyr)
+library(openxlsx)
+setwd("~/Downloads")
+#nfl2000stats <- read_csv("nfl2000stats.csv")
+#nfl2001stats <- read_csv("nfl2001stats.csv")
+nfl2002stats <- read_csv("nfl2002stats.csv")
+nfl2002stats <- nfl2002stats[,c(1:30)]
+nfl2003stats <- read_csv("nfl2003stats.csv")
+nfl2003stats <- nfl2003stats[,c(1:30)]
+nfl2004stats <- read_csv("nfl2004stats.csv")
+nfl2004stats <- nfl2004stats[,c(1:30)]
+nfl2005stats <- read_csv("nfl2005stats.csv")
+nfl2005stats <- nfl2005stats[,c(1:30)]
+nfl2006stats <- read_csv("nfl2006stats.csv")
+nfl2006stats <- nfl2006stats[,c(1:30)]
+nfl2007stats <- read_csv("nfl2007stats.csv")
+nfl2007stats <- nfl2007stats[,c(1:30)]
+nfl2008stats <- read_csv("nfl2008stats.csv")
+nfl2008stats <- nfl2008stats[,c(1:30)]
+nfl2009stats <- read_csv("nfl2009stats.csv")
+nfl2009stats <- nfl2009stats[,c(1:12, 14:28, 30:32)]
+nfl2010stats <- read_csv("nfl2010stats.csv")
+nfl2010stats <- nfl2010stats[,c(1:12, 14:28, 30:32)]
+nfl2011stats <- read_csv("nfl2011stats.csv")
+nfl2011stats <- nfl2011stats[,c(1:12, 14:28, 30:32)]
+nfl2012stats <- read_csv("nfl2012stats.csv")
+nfl2012stats <- nfl2012stats[,c(1:12, 14:28, 30:32)]
+nfl2013stats <- read_csv("nfl2013stats.csv")
+nfl2013stats <- nfl2013stats[,c(1:12, 14:28, 30:32)]
+
+#Combining 2000 to 2013 nfl stats into one
+nfl <- rbind(nfl2002stats, nfl2003stats, nfl2004stats, nfl2005stats, nfl2006stats, nfl2007stats, nfl2008stats, nfl2009stats, nfl2010stats, nfl2011stats, nfl2012stats, nfl2013stats)
+
+#Taking out any NA values
+na.omit(nfl)
+
+#Creating a "Wins" column (0 = loss and 1 = win)
+nfl$Wins = 0
+for (i in 1:nrow(nfl)) {
+  if (nfl[i,3] > nfl[i, 18]) {
+  nfl[i, 31] = 1
+  }
+}
+
+```
+
+```{r}
+#Creating new data frame with imp. statistics
+teams = data.frame("teamName" = c(), "wins" = c())
+
+#Storing the name of the teams
+for (i in 1:32) { #32 teams 
+ teams[i,1] = nfl2002stats[i,2]
+}
+
+
+for(i in teams$teamName) {
+  teams[i,2] = nfl[i,31]
+}
+```
+
+```{r}
+#Sum of wins for each team from 2000 to 2013
+NFL <- aggregate(nfl$Wins, by=list(TeamName = nfl$TeamName), FUN = sum)
+NFL$Wins = NFL$x
+NFL <- NFL[,c(1,3)]
+
+#Including pass yards per completion for each team 
+nfl$passYardsPerCompletion = nfl[,10]/nfl[,9]
+NFL$passYardsPerCompletion <- aggregate(nfl$passYardsPerCompletion, by=list(TeamName = nfl$TeamName), FUN = mean)
+
+#Including rush yards per run for each team
+nfl$rushYards = nfl[,7]/nfl[,6]
+NFL$rushYardsPerRun <- aggregate(nfl$rushYards, by=list(TeamName = nfl$TeamName), FUN = mean)
+
+#Including sack yards loss average for each team
+NFL$sackYardLoss <- aggregate(nfl$SackYdsOff, by=list(TeamName = nfl$TeamName), FUN = mean)
+
+#Including penalty yard loss average for each team
+NFL$penYardLoss <- aggregate(nfl$PenYdsOff, by=list(TeamName = nfl$TeamName), FUN = mean)
+
+#PassCompletionPct multiplied by passYardsPerCompletion should give you expected passYards everytime a ball is thrown
+nfl$passCompletionPct = nfl[,9] / nfl[,8]
+nfl$expPassYards = nfl$passYardsPerCompletion * nfl$passCompletionPct
+NFL$ExpPass <- aggregate(nfl$expPassYards, by=list(TeamName = nfl$TeamName), FUN = mean)
+```
+
+```{r}
+#We were not able to calculate the pass yards per completion, rush yards per run, sack yards loss, and penalty yard loss for 7 teams (Dallas Cowboys, Detroit Loins, Green Bay Packers, Miami Dolphins, Oakland Raiders, and St. Louis Rams) due to an error in the data set that we were given. 
+write.csv(NFL, "NFL.csv")
+```
+
+
